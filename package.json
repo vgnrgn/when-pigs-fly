@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "ammo.js": "^0.0.10",
+    "cannon-es": "^0.20.0",
     "howler": "^2.2.4",
     "path-browserify": "^1.0.1",
     "three": "^0.160.0"
