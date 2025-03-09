@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>When Pigs Fly</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+            font-size: 18px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #health, #fuel {
+            margin-bottom: 5px;
+        }
+        #score {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #intro-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            z-index: 100;
+        }
+        #intro-screen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        #intro-screen p {
+            font-size: 24px;
+            margin-bottom: 10px;
+            max-width: 800px;
+        }
+        #start-button {
+            margin-top: 30px;
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #start-button:hover {
+            background-color: #45a049;
+        }
+        /* Radar styles */
+        #radar-container {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 250px;
+            height: 250px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 4px solid #ff5722;
+            border-radius: 50%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(255, 87, 34, 0.9);
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        #radar {
+            width: 100%;
+            height: 100%;
+            display: block !important;
+        }
+        #radar-player {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1002;
+            box-shadow: 0 0 8px #4CAF50;
+        }
+        #radar-sweep {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(76, 175, 80, 0) 0%, rgba(76, 175, 80, 0.7) 100%);
+            transform-origin: left center;
+            animation: radar-sweep 4s infinite linear;
+            z-index: 1001;
+        }
+        @keyframes radar-sweep {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <div id="hud">
+        <div id="health">Health: 100%</div>
+        <div id="fuel">Fuel: 100%</div>
+        <div id="score">Score: 0</div>
+    </div>
+    <div id="radar-container">
+        <canvas id="radar"></canvas>
+        <div id="radar-player"></div>
+        <div id="radar-sweep"></div>
+    </div>
+    <div id="intro-screen">
+        <h1>When Pigs Fly</h1>
+        <p>Welcome to the skies! Your mission is to rescue pigs and defeat enemy planes.</p>
+        <p>Controls:</p>
+        <p>W/S - Pitch up/down</p>
+        <p>A/D - Roll left/right</p>
+        <p>Q/E - Yaw left/right</p>
+        <p>Space - Fire weapons</p>
+        <p>Shift - Boost</p>
+        <button id="start-button">Start Game</button>
+    </div>
+    <script src="bundle.js"></script>
+</body>
+</html> 

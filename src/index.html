@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>When Pigs Fly - 3D Flight Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 2px rgba(0,0,0,0.5);
+        }
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+        }
+        #intro-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            z-index: 100;
+        }
+        #intro-screen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        #intro-screen p {
+            font-size: 24px;
+            margin-bottom: 10px;
+            max-width: 800px;
+        }
+        #start-button {
+            margin-top: 30px;
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #start-button:hover {
+            background-color: #45a049;
+        }
+        /* Radar styles */
+        #radar-container {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            width: 250px;
+            height: 250px;
+            background-color: rgba(0, 0, 0, 0.8);
+            border: 4px solid #ff5722;
+            border-radius: 50%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(255, 87, 34, 0.9);
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        #radar {
+            width: 100%;
+            height: 100%;
+            display: block !important;
+        }
+        #radar-player {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1002;
+            box-shadow: 0 0 8px #4CAF50;
+        }
+        #radar-sweep {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(76, 175, 80, 0) 0%, rgba(76, 175, 80, 0.7) 100%);
+            transform-origin: left center;
+            animation: radar-sweep 4s infinite linear;
+            z-index: 1001;
+        }
+        @keyframes radar-sweep {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="hud">
+            <div id="health">Health: 100%</div>
+            <div id="fuel">Fuel: 100%</div>
+            <div id="score">Score: 0</div>
+        </div>
+        <div id="loading-screen">Loading...</div>
+    </div>
+    <div id="radar-container">
+        <canvas id="radar"></canvas>
+        <div id="radar-player"></div>
+        <div id="radar-sweep"></div>
+    </div>
+    <div id="intro-screen">
+        <h1>When Pigs Fly</h1>
+        <p>In an act of inter-species solidarity, Captain Pig must rescue birds by shooting autonomous enemy planes</p>
+        <p>Controls:</p>
+        <p>W/S - Throttle increase /decrease</p>
+        <p>Arrow Keys - Turn left/right/up/down </p>
+        <p>Space - Fire weapons</p>
+        <button id="start-button">Start Game</button>
+    </div>
+</body>
+</html> 
