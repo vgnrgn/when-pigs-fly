@@ -71,7 +71,7 @@ export class Game {
         
         // World boundary settings - increased by another 50% (now 338% of original)
         this.worldRadius = 845; // Increased from 563 by another 50%
-        this.worldWrapping = false; // Disable world wrapping in favor of natural boundaries
+        this.worldWrapping = true; // Enable world wrapping instead of natural boundaries
         this.boundaryWarningRadius = 675; // Increased from 450 by another 50%
         this.boundaryPushRadius = 760; // Increased from 507 by another 50%
         this.boundaryFogRadius = 593; // Increased from 395 by another 50%
@@ -608,27 +608,38 @@ export class Game {
     }
 
     updateCamera(delta) {
-        if (!this.player || !this.player.position) {
-            console.warn("Player not available for camera update");
-            return;
+        if (!this.player) return;
+        
+        // Get player position and rotation
+        const playerPos = this.player.position;
+        const playerRot = this.player.rotation;
+        
+        // Calculate camera target position based on player position and rotation
+        // Position camera behind and above player
+        const cameraOffset = new THREE.Vector3(
+            -Math.sin(playerRot.y) * this.cameraDistance,
+            this.cameraHeight,
+            -Math.cos(playerRot.y) * this.cameraDistance
+        );
+        
+        // Add player position to get world space camera position
+        const targetCameraPosition = new THREE.Vector3().copy(playerPos).add(cameraOffset);
+        
+        // Handle camera position when player wraps around the boundary
+        if (this.worldWrapping) {
+            // Check if the camera has suddenly moved a large distance (indicating a wrap)
+            const cameraMoveDist = this.camera.position.distanceTo(targetCameraPosition);
+            if (cameraMoveDist > this.worldRadius) {
+                // If the distance is very large, immediately teleport the camera
+                this.camera.position.copy(targetCameraPosition);
+            } else {
+                // Otherwise, smoothly interpolate camera position
+                this.camera.position.lerp(targetCameraPosition, this.cameraSmoothness);
+            }
+        } else {
+            // Standard smooth camera movement
+            this.camera.position.lerp(targetCameraPosition, this.cameraSmoothness);
         }
-        
-        // Calculate desired camera position based on player's position and horizontal rotation only
-        // Create a direction vector that ignores pitch (x-rotation)
-        const playerDirection = new THREE.Vector3(0, 0, 1);
-        
-        // Only apply the Y-rotation (yaw) but ignore X-rotation (pitch)
-        const horizontalRotation = new THREE.Euler(0, this.player.rotation.y, 0);
-        playerDirection.applyEuler(horizontalRotation);
-        playerDirection.normalize();
-        
-        // Position camera behind player
-        const cameraOffset = playerDirection.clone().multiplyScalar(-this.cameraDistance);
-        const targetCameraPosition = this.player.position.clone().add(cameraOffset);
-        targetCameraPosition.y += this.cameraHeight;
-        
-        // Smoothly interpolate camera position
-        this.camera.position.lerp(targetCameraPosition, this.cameraSmoothness);
         
         // Make camera look at player with slight height offset
         const lookAtPosition = this.player.position.clone();
@@ -1514,33 +1525,57 @@ export class Game {
             object.position.z * object.position.z
         );
         
-        // For player objects, apply a simple check to prevent going beyond the absolute boundary
+        // For player objects, handle boundary crossing
         if (object === this.player && distanceFromCenter > this.worldRadius) {
-            // Calculate normalized direction vector toward center
-            const dirX = -object.position.x / distanceFromCenter;
-            const dirZ = -object.position.z / distanceFromCenter;
-            
-            // Apply immediate position correction to prevent escaping
-            const pushbackDistance = 0.05 * this.worldRadius; // 5% of radius
-            object.position.x += dirX * pushbackDistance;
-            object.position.z += dirZ * pushbackDistance;
-            
-            // Apply velocity correction if available
-            if (object.velocity) {
-                // Reflect velocity back toward center
-                const dotProduct = object.velocity.x * (-dirX) + object.velocity.z * (-dirZ);
-                if (dotProduct > 0) { // If moving outward
-                    object.velocity.x = dirX * object.velocity.length() * 0.8;
-                    object.velocity.z = dirZ * object.velocity.length() * 0.8;
+            if (this.worldWrapping) {
+                // Calculate the angle from the center
+                const angle = Math.atan2(object.position.z, object.position.x);
+                
+                // Wrap to the opposite side of the world
+                const wrapDistance = this.worldRadius * 0.9; // Slightly inside the boundary
+                
+                // Calculate new position on the opposite side
+                const newX = -Math.cos(angle) * wrapDistance;
+                const newZ = -Math.sin(angle) * wrapDistance;
+                
+                // Apply the new position
+                object.position.x = newX;
+                object.position.z = newZ;
+                
+                // Update mesh position
+                if (object.mesh) {
+                    object.mesh.position.copy(object.position);
                 }
+                
+                return true; // Object was wrapped
+            } else {
+                // Original pushback behavior for non-wrapping mode
+                // Calculate normalized direction vector toward center
+                const dirX = -object.position.x / distanceFromCenter;
+                const dirZ = -object.position.z / distanceFromCenter;
+                
+                // Apply immediate position correction to prevent escaping
+                const pushbackDistance = 0.05 * this.worldRadius; // 5% of radius
+                object.position.x += dirX * pushbackDistance;
+                object.position.z += dirZ * pushbackDistance;
+                
+                // Apply velocity correction if available
+                if (object.velocity) {
+                    // Reflect velocity back toward center
+                    const dotProduct = object.velocity.x * (-dirX) + object.velocity.z * (-dirZ);
+                    if (dotProduct > 0) { // If moving outward
+                        object.velocity.x = dirX * object.velocity.length() * 0.8;
+                        object.velocity.z = dirZ * object.velocity.length() * 0.8;
+                    }
+                }
+                
+                // Update mesh position
+                if (object.mesh) {
+                    object.mesh.position.copy(object.position);
+                }
+                
+                return true; // Object was corrected
             }
-            
-            // Update mesh position
-            if (object.mesh) {
-                object.mesh.position.copy(object.position);
-            }
-            
-            return true; // Object was corrected
         }
         
         // Enemy planes now handle their own boundary wrapping in their update method
@@ -1691,6 +1726,30 @@ export class Game {
         const playerPos = this.player.position;
         let distanceFromCenter = Math.sqrt(playerPos.x * playerPos.x + playerPos.z * playerPos.z);
         
+        // If world wrapping is enabled, we don't need to apply boundary effects
+        if (this.worldWrapping) {
+            // Just deactivate any active warnings
+            if (this.boundaryWarningActive) {
+                this.boundaryWarningActive = false;
+                
+                // Stop warning sound if available
+                if (this.boundaryWarningSound && this.boundaryWarningSound.isPlaying) {
+                    this.boundaryWarningSound.stop();
+                }
+                
+                // Hide warning element if available
+                if (this.boundaryWarningElement) {
+                    this.boundaryWarningElement.visible = false;
+                }
+                
+                // Stop wind sound if available
+                if (this.boundaryWindSound && this.boundaryWindSound.isPlaying) {
+                    this.boundaryWindSound.stop();
+                }
+            }
+            return;
+        }
+        
         // Safety check: If player somehow gets way beyond the boundary, teleport them back
         if (distanceFromCenter > this.worldRadius * 1.1) {
             // Calculate a safe position inside the boundary
@@ -1768,20 +1827,14 @@ export class Game {
                     }
                 }
             }
-            
-            // Ensure shooting is not disabled near boundary
-            if (this.player.controls && this.player.controls.shoot === false && this.keyIsDown(' ')) {
-                // Force enable shooting if space is pressed
-                this.player.controls.shoot = true;
-            }
         } else {
             // Deactivate warning if active
             if (this.boundaryWarningActive) {
                 this.boundaryWarningActive = false;
                 
                 // Stop warning sound if available
-                if (this.boundaryWarningSound) {
-                    this.boundaryWarningSound.pause();
+                if (this.boundaryWarningSound && this.boundaryWarningSound.isPlaying) {
+                    this.boundaryWarningSound.stop();
                 }
                 
                 // Hide warning element if available
@@ -1790,8 +1843,8 @@ export class Game {
                 }
                 
                 // Stop wind sound if available
-                if (this.boundaryWindSound) {
-                    this.boundaryWindSound.pause();
+                if (this.boundaryWindSound && this.boundaryWindSound.isPlaying) {
+                    this.boundaryWindSound.stop();
                 }
             }
         }
