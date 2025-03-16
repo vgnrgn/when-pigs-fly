@@ -11,7 +11,7 @@ module.exports = (env, argv) => {
         entry: './src/index.js',
         output: {
             path: path.resolve(__dirname, 'dist'),
-            filename: isProduction ? '[name].[contenthash].js' : 'bundle.js',
+            filename: '[name].[contenthash].js',
             clean: true, // Clean the output directory before emit
         },
         module: {
@@ -106,10 +106,7 @@ module.exports = (env, argv) => {
                     extractComments: false,
                 }),
             ],
-            splitChunks: {
-                chunks: 'all',
-                name: false,
-            },
+            splitChunks: false
         },
         devServer: {
             static: {

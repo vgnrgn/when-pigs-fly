@@ -8,12 +8,10 @@ export class Player {
         this.game = game;
         this.position = new THREE.Vector3(0, 1.0, 0);
         this.rotation = new THREE.Euler(0, 0, 0);
-        this.health = 100;
         this.speed = 0;
-        this.maxSpeed = 78 / 3.6; // Increased by another 20% from 65 km/h
+        this.maxSpeed = 100 / 3.6; // Increased from 78 km/h to 100 km/h
         this.minSpeed = 5;
         this.throttle = 0;
-        this.fuel = 100;
         this.isGrounded = true;
         
         // Flying physics
@@ -22,7 +20,7 @@ export class Player {
         this.gravity = new THREE.Vector3(0, -9.81, 0);
         this.drag = 0.002;
         this.lift = 1.2;
-        this.thrustPower = 78; // Increased by another 20% from 65
+        this.thrustPower = 100; // Increased from 78 to 100
         
         // Control sensitivity
         this.pitchRate = 1.0;
@@ -38,7 +36,7 @@ export class Player {
         
         // Weapon properties
         this.bullets = [];
-        this.bulletSpeed = 60; // Increased bullet speed for better gameplay
+        this.bulletSpeed = 80; // Increased bullet speed from 60 to 80
         this.bulletCooldown = 0.1; // Reduced from 0.2 to 0.1 for faster fire rate
         this.lastShotTime = 0;
         
@@ -62,6 +60,40 @@ export class Player {
         // Create the plane mesh
         this.createMesh();
         console.log("Player mesh created");
+        
+        // Load sounds
+        this.loadSounds();
+    }
+    
+    // Add sound loading function
+    loadSounds() {
+        // Create audio listener
+        this.audioListener = new THREE.AudioListener();
+        this.game.camera.add(this.audioListener);
+        
+        // Create engine sound
+        this.engineSound = new THREE.Audio(this.audioListener);
+        this.game.scene.add(this.engineSound);
+        
+        // Create shooting sound
+        this.shootSound = new THREE.Audio(this.audioListener);
+        this.game.scene.add(this.shootSound);
+        
+        // Load engine sound
+        const audioLoader = new THREE.AudioLoader();
+        audioLoader.load('audio/plane_engine.mp3', (buffer) => {
+            this.engineSound.setBuffer(buffer);
+            this.engineSound.setLoop(true);
+            this.engineSound.setVolume(0.5);
+            this.engineSound.play();
+        });
+        
+        // Load shooting sound
+        audioLoader.load('audio/gun_shot.mp3', (buffer) => {
+            this.shootSound.setBuffer(buffer);
+            this.shootSound.setLoop(false);
+            this.shootSound.setVolume(0.3);
+        });
     }
     
     createMesh() {
@@ -155,7 +187,9 @@ export class Player {
         switch(event.key) {
             case 'w': this.controls.throttle = true; break;
             case 's': this.controls.brake = true; break;
+            case 'a': 
             case 'ArrowLeft': this.controls.left = true; break;
+            case 'd':
             case 'ArrowRight': this.controls.right = true; break;
             case 'ArrowUp': this.controls.up = true; break;
             case 'ArrowDown': this.controls.down = true; break;
@@ -167,7 +201,9 @@ export class Player {
         switch(event.key) {
             case 'w': this.controls.throttle = false; break;
             case 's': this.controls.brake = false; break;
+            case 'a':
             case 'ArrowLeft': this.controls.left = false; break;
+            case 'd':
             case 'ArrowRight': this.controls.right = false; break;
             case 'ArrowUp': this.controls.up = false; break;
             case 'ArrowDown': this.controls.down = false; break;
@@ -350,20 +386,8 @@ export class Player {
     }
     
     // Update HUD with player status
-    updateHUD(outOfFuel = false) {
-        if (this.game.healthElement) {
-            this.game.healthElement.textContent = `Health: ${Math.round(this.health)}%`;
-        }
-        
-        if (this.game.fuelElement) {
-            this.game.fuelElement.textContent = `Fuel: ${Math.round(this.fuel)}%`;
-            
-            if (outOfFuel) {
-                this.game.fuelElement.style.color = 'red';
-            } else {
-                this.game.fuelElement.style.color = ''; // Reset to default
-            }
-        }
+    updateHUD() {
+        // HUD updates removed
     }
     
     // Acceleration and deceleration 
@@ -379,6 +403,14 @@ export class Player {
         // Check cooldown
         if (now - this.lastShotTime < this.bulletCooldown) {
             return;
+        }
+        
+        // Play shooting sound
+        if (this.shootSound && this.shootSound.isPlaying) {
+            this.shootSound.stop();
+        }
+        if (this.shootSound && this.shootSound.buffer) {
+            this.shootSound.play();
         }
         
         // Get the front center position of the plane
@@ -497,11 +529,7 @@ export class Player {
     }
     
     damage(amount) {
-        this.health -= amount;
-        
-        if (this.health <= 0) {
-            // TODO: Handle death
-        }
+        // No longer needed
     }
     
     applyForce(force) {

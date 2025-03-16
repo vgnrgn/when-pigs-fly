@@ -23,6 +23,17 @@
             font-size: 18px;
             text-shadow: 2px 2px 2px rgba(0,0,0,0.5);
         }
+        #controls-help {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            font-size: 16px;
+            background-color: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+        }
         #loading-screen {
             position: absolute;
             top: 0;
@@ -128,9 +139,13 @@
 <body>
     <div id="game-container">
         <div id="hud">
-            <div id="health">Health: 100%</div>
-            <div id="fuel">Fuel: 100%</div>
-            <div id="score">Score: 0</div>
+            <!-- Removed health, fuel, and score elements -->
+        </div>
+        <div id="controls-help">
+            <p><strong>W/S</strong>: Throttle</p>
+            <p><strong>←/→</strong>: Turn left/right</p>
+            <p><strong>↑/↓</strong>: Pitch up/down</p>
+            <p><strong>Space</strong>: Shoot</p>
         </div>
         <div id="loading-screen">Loading...</div>
     </div>
@@ -143,9 +158,10 @@
         <h1>When Pigs Fly</h1>
         <p>In an act of inter-species solidarity, Captain Pig must rescue birds by shooting autonomous enemy planes</p>
         <p>Controls:</p>
-        <p>W/S - Throttle increase /decrease</p>
-        <p>Arrow Keys - Turn left/right/up/down </p>
-        <p>Space - Fire weapons</p>
+        <p><strong>W/S</strong>: Throttle increase/decrease</p>
+        <p><strong>←/→</strong>: Turn left/right</p>
+        <p><strong>↑/↓</strong>: Pitch up/down</p>
+        <p><strong>Space</strong>: Fire weapons</p>
         <button id="start-button">Start Game</button>
     </div>
 </body>

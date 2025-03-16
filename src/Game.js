@@ -24,9 +24,9 @@ export class Game {
         document.getElementById('game-container').appendChild(this.renderer.domElement);
         
         // Create HUD references
-        this.healthElement = document.getElementById('health');
-        this.fuelElement = document.getElementById('fuel');
-        this.scoreElement = document.getElementById('score');
+        // this.healthElement = document.getElementById('health');
+        // this.fuelElement = document.getElementById('fuel');
+        // this.scoreElement = document.getElementById('score');
         
         // Timing
         this.clock = new THREE.Clock();
@@ -82,7 +82,7 @@ export class Game {
         this.useFog = false; // Disable fog
         
         // Game state
-        this.score = 0;
+        // this.score = 0;
         this.rescuedBirds = 0;
         this.gameOver = false;
         this.paused = false;
@@ -664,12 +664,12 @@ export class Game {
             // Check for collisions with terrain
             this.checkTerrainCollisions();
             
-            // Update player HUD
-            this.healthElement.textContent = `Health: ${Math.round(this.player.health)}%`;
-            this.fuelElement.textContent = `Fuel: ${Math.round(this.player.fuel)}%`;
+            // Update player HUD - removing health and fuel updates
+            // this.healthElement.textContent = `Health: ${Math.round(this.player.health)}%`;
+            // this.fuelElement.textContent = `Fuel: ${Math.round(this.player.fuel)}%`;
             
-            // Check for game over conditions
-            if (this.player.health <= 0 || this.player.position.y < -50) {
+            // Check for game over conditions - removing health check
+            if (this.player.position.y < -50) {
                 console.log("Game over - player destroyed");
                 this.gameOver = true;
                 this.createExplosion(this.player.position.x, this.player.position.y, this.player.position.z, 2);
@@ -802,6 +802,9 @@ export class Game {
             // Create explosion
             this.createExplosion(enemy.position);
             
+            // Play explosion sound
+            this.playExplosionSound(enemy.position);
+            
             // Release birds - maximum 4 birds per enemy plane
             const birdCount = Math.min(4, Math.floor(Math.random() * 3) + 2); // Random number between 2-4
             
@@ -813,59 +816,14 @@ export class Game {
                 this.releaseBirds(enemy.position, birdsToRelease);
             }
             
-            // Update score
-            this.score += 100 + (birdsToRelease * 20);
-            this.updateScoreDisplay();
+            // Remove enemy from scene and array
+            this.scene.remove(enemy.mesh);
+            this.enemies.splice(index, 1);
             
-            // Remove enemy plane
-            if (enemy.mesh) {
-                this.scene.remove(enemy.mesh);
-                // Dispose of geometries and materials to prevent memory leaks
-                if (enemy.mesh.geometry) {
-                    enemy.mesh.geometry.dispose();
-                }
-                if (enemy.mesh.material) {
-                    if (Array.isArray(enemy.mesh.material)) {
-                        enemy.mesh.material.forEach(m => m.dispose());
-                    } else {
-                        enemy.mesh.material.dispose();
-                    }
-                }
-                
-                // Dispose of all child meshes
-                if (enemy.mesh.children && enemy.mesh.children.length > 0) {
-                    enemy.mesh.children.forEach(child => {
-                        if (child.geometry) child.geometry.dispose();
-                        if (child.material) {
-                            if (Array.isArray(child.material)) {
-                                child.material.forEach(m => m.dispose());
-                            } else {
-                                child.material.dispose();
-                            }
-                        }
-                    });
-                }
-            }
-            
-            // Remove from array
-            if (index >= 0 && index < this.enemies.length) {
-                this.enemies.splice(index, 1);
-                
-                // Immediately spawn a new enemy to replace the destroyed one
-                this.createNewEnemy();
-            }
+            // Create a new enemy to replace the destroyed one
+            this.createNewEnemy();
         } catch (error) {
             console.error("Error in handleEnemyDestruction:", error);
-            // Remove enemy plane even if there's an error
-            if (enemy && enemy.mesh) {
-                this.scene.remove(enemy.mesh);
-            }
-            if (index >= 0 && index < this.enemies.length) {
-                this.enemies.splice(index, 1);
-                
-                // Immediately spawn a new enemy even if there was an error
-                this.createNewEnemy();
-            }
         }
     }
 
@@ -1330,7 +1288,7 @@ export class Game {
         missionText.style.lineHeight = '1.5';
         introOverlay.appendChild(missionText);
         
-        // Add instructions
+        // Add instructions with more detailed controls
         const instructions = document.createElement('div');
         instructions.style.fontSize = '1.2rem';
         instructions.style.marginBottom = '40px';
@@ -1338,11 +1296,13 @@ export class Game {
         instructions.style.textAlign = 'left';
         instructions.innerHTML = `
             <h2 style="text-align: center; margin-bottom: 15px;">Controls:</h2>
-            <p>W: Increase throttle</p>
-            <p>S: Decrease throttle</p>
-            <p>Arrow Keys: Control direction</p>
-            <p>Space: Fire wing guns</p>
-            <p>Goal: Shoot down autonomous planes to rescue the birds inside!</p>
+            <p><strong>W</strong>: Increase throttle - Hold to accelerate</p>
+            <p><strong>S</strong>: Decrease throttle - Hold to slow down</p>
+            <p><strong>←/→</strong>: Turn left/right</p>
+            <p><strong>↑/↓</strong>: Pitch up/down</p>
+            <p><strong>Space</strong>: Fire wing guns</p>
+            <p><strong>Goal</strong>: Shoot down autonomous planes to rescue the birds inside!</p>
+            <p><strong>Tip</strong>: Maintain altitude by balancing throttle and pitch</p>
         `;
         introOverlay.appendChild(instructions);
         
@@ -2473,5 +2433,33 @@ export class Game {
             '#00FF7F'  // Spring Green
         ];
         return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    // Add explosion sound function
+    playExplosionSound(position) {
+        // Create positional audio for explosion
+        const listener = this.player.audioListener;
+        if (!listener) return;
+        
+        const explosionSound = new THREE.PositionalAudio(listener);
+        const audioLoader = new THREE.AudioLoader();
+        
+        audioLoader.load('audio/explosion.mp3', (buffer) => {
+            explosionSound.setBuffer(buffer);
+            explosionSound.setRefDistance(20);
+            explosionSound.setVolume(0.7);
+            explosionSound.play();
+            
+            // Create temporary object to hold the sound
+            const soundObject = new THREE.Object3D();
+            soundObject.position.copy(position);
+            soundObject.add(explosionSound);
+            this.scene.add(soundObject);
+            
+            // Remove sound object after playing
+            setTimeout(() => {
+                this.scene.remove(soundObject);
+            }, 3000);
+        });
     }
 } 
